@@ -14,7 +14,7 @@ MWCSolver::MWCSolver(const Graph& graph, int numThreads) : G(graph), numThreads(
     bestSolution.weight = numeric_limits<int>::max(); // Initialize the best cut weight to maximum value
     bestSolution.recursionCalls = 0; // Initialize the number of recursion calls
 
-    if (G.n > 9) { // If the graph has more than 4 vertices set the max depth to 4
+    if (G.n > 9) { // If the graph has more than 9 vertices set the max depth to 9
         maxDepth = 9;
     }
     else {
@@ -68,13 +68,13 @@ void MWCSolver::dfs(state currentState) {
 }
 
 void MWCSolver::parallelDFS() {
-    #pragma omp parallel for schedule(dynamic) num_threads(numThreads) // Start parallel region
+    #pragma omp parallel for schedule(dynamic) num_threads(numThreads) // Start parallel region with dynamic scheduling (each thread gets a chunk of work) 
     for (size_t i = 0; i < states.size(); i++) {
-        dfsAlmostSeq(states[i]); // Continue the search
+        dfsAlmostSeq(states[i]); // Continue the search with almost sequential execution
     }
 }
 
-void MWCSolver::dfsAlmostSeq(state currentState) {
+void MWCSolver::dfsAlmostSeq(state currentState) { 
     #pragma omp atomic // Start atomic region (ensures that the operation is executed atomically)
     bestSolution.recursionCalls++; // Increment the number of recursion calls
     #pragma omp critical // Start critical region (only one thread can execute this block at a time)
