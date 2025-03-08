@@ -4,17 +4,19 @@
 #include "dataFunctions.h"
 #include "MWCSolver.h"
 #include "Graph.h"
+#include <omp.h>
 
 // USAGE: ./output.exe <filename> <a>
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <filename> <a>" << std::endl;
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0] << " <filename> <a> <number of threads>" << std::endl;
         return 1;
     }
 
     std::string filename = "input/" + std::string(argv[1]);
     int a = std::stoi(argv[2]);  // Convert string argument to integer
+    int numThreads = std::stoi(argv[3]);  // Convert string argument to integer
     Graph G;
 
     if (loadGraphFromFile(filename, G, a)) {
@@ -25,7 +27,7 @@ int main(int argc, char* argv[]) {
         cerr << "Failed to load the graph." << endl;
     }
     
-    MWCSolver solver(G);
+    MWCSolver solver(G, numThreads);  // Create a solver object
     
     auto start = std::chrono::high_resolution_clock::now(); // Start measuring time
 

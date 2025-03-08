@@ -24,12 +24,13 @@ class MWCSolver {
     } bestSolution;
 
     public:
-        MWCSolver(const Graph& graph);  // Constructor declaration
+        MWCSolver(const Graph& graph, int numThreads); // Constructor for the MWCSolver class
 
         void solve();  // Solve the Minimum Weighted Cut problem
 
     private:
         const Graph& G;  // Reference to the graph object
+        int numThreads;  // Number of threads to use
 
         void dfs(state currentState);  // Depth-first search for DFS (deep copy for parallel later)
         int computeLowerBound(const vector<bool> &nodes, int size);  // Compute lower bound

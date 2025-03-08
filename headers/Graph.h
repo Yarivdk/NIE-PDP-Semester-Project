@@ -1,4 +1,4 @@
-// In both dataFunctions.h and MWCSolver.h
+// In both dataFunctions.h and sequentialAlgorithm.h
 #ifndef GRAPH_H
 #define GRAPH_H
 
