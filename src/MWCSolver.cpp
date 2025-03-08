@@ -13,23 +13,68 @@ MWCSolver::MWCSolver(const Graph& graph, int numThreads) : G(graph), numThreads(
     bestSolution.nodes.resize(G.n, 0); // Initialize the best partition vector
     bestSolution.weight = numeric_limits<int>::max(); // Initialize the best cut weight to maximum value
     bestSolution.recursionCalls = 0; // Initialize the number of recursion calls
+
+    if (G.n > 9) { // If the graph has more than 4 vertices set the max depth to 4
+        maxDepth = 9;
+    }
+    else {
+        maxDepth = G.n-1;
+    }
 }
 
 void MWCSolver::solve() {
-    //omp_set_max_active_levels(1);   // Disable excessive parallel nesting
-
-    #pragma omp parallel num_threads(numThreads) // Start parallel region
-    {
-        #pragma omp single // Start single region (only one thread executes this block)
-        {
-            state s = state(vector<bool>(G.n, false), 0, 0, 0); // Initialize the initial state
-            dfs(s); // start dfs from vertex 0
-        }
+    state s = state(vector<bool>(G.n, false), 0, 0, 0); // Initialize the initial state
+    dfs(s); // Start the search
+    if (states.size() > 0) {
+        parallelDFS(); // Start the parallel search
     }
     printSolution(); // Print the solution
 }
 
 void MWCSolver::dfs(state currentState) {
+    // Assign vertex to Y (0) and search next state
+    currentState.nodes[currentState.depth] = false; // Assign vertex to Y
+    int newWeight = currentState.weight + getEdgeCutWeight(currentState.nodes, currentState.depth, false); // Update the cut weight
+    state leftState = state(currentState.nodes, newWeight, currentState.amountNodes, currentState.depth + 1); // Create the next state
+
+    if ((leftState.amountNodes <= G.a) && (G.a - leftState.amountNodes) <= (G.n - leftState.depth)) { // if the amount of nodes assigned to X is less than a and the remaining nodes can be assigned to X
+        int lb = newWeight + computeLowerBound(leftState.nodes, leftState.depth); // Compute the lower bound
+        if (newWeight < bestSolution.weight && lb < bestSolution.weight) { // If the lower bound is better than the best we have so far
+            if (currentState.depth < maxDepth) { // If not all vertices are assigned
+                dfs(leftState); // Continue the search
+            } else {
+                states.push_back(leftState); // Continue the search
+            }
+        }
+    }
+    
+    
+    // Assign vertex to X (1) and update cut weight
+    currentState.nodes[currentState.depth] = true; // Assign vertex to X
+    newWeight = currentState.weight + getEdgeCutWeight(currentState.nodes, currentState.depth, true); // Update the cut weight
+    state rightState = state(currentState.nodes, newWeight, currentState.amountNodes + 1, currentState.depth + 1); // Create the next state
+
+    if ((rightState.amountNodes <= G.a) && (G.a - rightState.amountNodes) <= (G.n - rightState.depth))  { // if the amount of nodes assigned to X is less than a and the remaining nodes can be assigned to X
+        int lb = newWeight + computeLowerBound(rightState.nodes, rightState.depth); // Compute the lower bound
+        if (newWeight < bestSolution.weight && lb < bestSolution.weight) { // If the lower bound is better than the best we have so far
+            if (currentState.depth < maxDepth) { // If not all vertices are assigned
+                dfs(rightState); // Continue the search
+            } else {
+                states.push_back(rightState); // Continue the search
+            }
+        }
+    }
+
+}
+
+void MWCSolver::parallelDFS() {
+    #pragma omp parallel for schedule(dynamic) num_threads(numThreads) // Start parallel region
+    for (size_t i = 0; i < states.size(); i++) {
+        dfsAlmostSeq(states[i]); // Continue the search
+    }
+}
+
+void MWCSolver::dfsAlmostSeq(state currentState) {
     #pragma omp atomic // Start atomic region (ensures that the operation is executed atomically)
     bestSolution.recursionCalls++; // Increment the number of recursion calls
     #pragma omp critical // Start critical region (only one thread can execute this block at a time)
@@ -53,12 +98,7 @@ void MWCSolver::dfs(state currentState) {
     if ((leftState.amountNodes <= G.a) && (G.a - leftState.amountNodes) <= (G.n - leftState.depth)) { // if the amount of nodes assigned to X is less than a and the remaining nodes can be assigned to X
         int lb = newWeight + computeLowerBound(leftState.nodes, leftState.depth); // Compute the lower bound
         if (newWeight < bestSolution.weight && lb < bestSolution.weight) { // If the lower bound is better than the best we have so far
-            if (currentState.depth < 0.75*G.n) { // If not all vertices are assigned
-                #pragma omp task // Start task region
-                dfs(leftState); // Continue the search
-            } else {
-                dfs(leftState); // Continue the search
-            }
+            dfsAlmostSeq(leftState); // Continue the search
         }
     }
     
@@ -71,16 +111,9 @@ void MWCSolver::dfs(state currentState) {
     if ((rightState.amountNodes <= G.a) && (G.a - rightState.amountNodes) <= (G.n - rightState.depth))  { // if the amount of nodes assigned to X is less than a and the remaining nodes can be assigned to X
         int lb = newWeight + computeLowerBound(rightState.nodes, rightState.depth); // Compute the lower bound
         if (newWeight < bestSolution.weight && lb < bestSolution.weight) { // If the lower bound is better than the best we have so far
-            if (currentState.depth < 0.75*G.n) { // If not all vertices are assigned
-                #pragma omp task // Start task region
-                dfs(rightState); // Continue the search
-            } else {
-                dfs(rightState); // Continue the search
-            }
+            dfsAlmostSeq(rightState); // Continue the search
         }
     }
-
-    #pragma omp taskwait // Wait for all tasks to finish for correct results
 }
 
 int MWCSolver::getEdgeCutWeight(const vector<bool> &nodes, int index, bool value) { // Get edge cut weight for a given vector of nodes
@@ -90,6 +123,7 @@ int MWCSolver::getEdgeCutWeight(const vector<bool> &nodes, int index, bool value
     }
     return weight;
 }
+
 
 int MWCSolver::computeLowerBound(const vector<bool> &nodes, int size) { // Compute lower bound
     int bound = 0; // Initialize the bound 

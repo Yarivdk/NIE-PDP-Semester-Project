@@ -31,8 +31,12 @@ class MWCSolver {
     private:
         const Graph& G;  // Reference to the graph object
         int numThreads;  // Number of threads to use
+        int maxDepth; // max depth
+        vector<state> states;
 
-        void dfs(state currentState);  // Depth-first search for DFS (deep copy for parallel later)
+        void dfs(state currentState);  // Depth-first search for DFS
+        void parallelDFS();
+        void dfsAlmostSeq(state currentState);  // Depth-first search for DFS with almost sequential execution
         int computeLowerBound(const vector<bool> &nodes, int size);  // Compute lower bound
         int getEdgeCutWeight(const vector<bool> &nodes, int index, bool value);  // Get edge cut weight for a given vector of nodes
         void printSolution();  // Print the solution (best partition and cut weight)
