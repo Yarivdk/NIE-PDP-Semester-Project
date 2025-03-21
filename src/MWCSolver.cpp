@@ -79,8 +79,6 @@ void MWCSolver::dfs(state currentState) {
             }
         }
     }
-
-    #pragma omp taskwait // Wait for all tasks to finish for correct results
 }
 
 int MWCSolver::getEdgeCutWeight(const vector<bool> &nodes, int index, bool value) { // Get edge cut weight for a given vector of nodes
