@@ -35,11 +35,13 @@ void MWCSolver::dfs(state currentState) {
     { 
         if (currentState.depth == G.n) { // If all vertices are assigned
             #pragma omp critical // Start critical region (only one thread can execute this block at a time)
+            {
             if (currentState.amountNodes == G.a && currentState.weight < bestSolution.weight) { // If the partition is valid and the cut weight is better than the best we have so far 
                 bestSolution.nodes = currentState.nodes; // Update the best partition
                 bestSolution.weight = currentState.weight; // Update the best cut weight
             }
             return;
+            }
         }
     }
     
