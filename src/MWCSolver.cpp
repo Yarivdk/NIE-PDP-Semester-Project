@@ -16,8 +16,8 @@ MWCSolver::MWCSolver(const Graph& graph, int numThreads) : G(graph), numThreads(
     bestSolution.weight = numeric_limits<int>::max(); // Initialize the best cut weight to maximum value
     bestSolution.recursionCalls = 0; // Initialize the number of recursion calls
 
-    if (G.n > 9) { // If the graph has more than 9 vertices set the max depth to 9
-        maxDepth = 9;
+    if (G.n > 3) { // If the graph has more than 9 vertices set the max depth to 9
+        maxDepth = 3;
     }
     else {
         maxDepth = G.n-1;
@@ -125,13 +125,13 @@ void MWCSolver::slaveSolve(int rank) {
 
         state s = MPItoNormalState(mpiState);
 
-        #pragma cmp parallel num_threads(numThreads) // start parallel region to run DFS 
+        #pragma omp parallel num_threads(numThreads) // start parallel region to run DFS 
         {
-            int numThreadsInRegion;
+            // int numThreadsInRegion;
+            // numThreadsInRegion = omp_get_num_threads();
             #pragma omp single
             {
-                numThreadsInRegion = omp_get_num_threads();
-                cout << "Number of threads in the region: " << numThreadsInRegion << endl;
+                // cout << "Number of threads in the region: " << numThreadsInRegion << endl;
                 dfsAlmostSeq(s); // Run the DFS algorithm
             }
             

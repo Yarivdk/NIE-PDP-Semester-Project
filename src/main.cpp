@@ -30,6 +30,7 @@ int main(int argc, char* argv[]) {
 
 
     MWCSolver solver(G, numThreads);  // Create a solver object
+    cout << "Number of threads: " << numThreads << endl;
 
     int rank, size;
     MPI_Init(NULL, NULL); // Initialize MPI
