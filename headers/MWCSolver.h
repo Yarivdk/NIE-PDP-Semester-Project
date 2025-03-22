@@ -16,6 +16,14 @@ struct state { // State of the search
     state(vector<bool> nodes, int weight, int amountNodes, int depth) : nodes(nodes), weight(weight), amountNodes(amountNodes), depth(depth) {}
 };
 
+struct MPIState {
+    bool nodes[100];
+    int size;
+    int weight;
+    int amountNodes;
+    int depth;
+};
+
 class MWCSolver {
     struct solution {
         vector<bool> nodes; // Best partition of the graph
@@ -23,10 +31,18 @@ class MWCSolver {
         int recursionCalls; // Number of recursion calls
     } bestSolution;
 
+    struct MPIsolution {
+        bool nodes[100];
+        int size;
+        int weight;
+        int recursionCalls;
+    };
+
     public:
         MWCSolver(const Graph& graph, int numThreads); // Constructor for the MWCSolver class
 
-        void solve();  // Solve the Minimum Weighted Cut problem
+        void masterSolve(int numProcesses); // Master process solve
+        void slaveSolve(int rank); // Slave process solve
 
     private:
         const Graph& G;  // Reference to the graph object
@@ -34,8 +50,12 @@ class MWCSolver {
         int maxDepth; // max depth
         vector<state> states;
 
+        MPIState normalToMPIState(state s); // Convert state to MPIState
+        state MPItoNormalState(MPIState s); // Convert MPIState to state
+        MPIsolution normalToMPIsolution(solution s); // Convert solution to MPIsolution
+        solution MPItoNormalsolution(MPIsolution s); // Convert MPIsolution to solution
+
         void dfs(state currentState);  // Depth-first search for DFS
-        void parallelDFS();
         void dfsAlmostSeq(state currentState);  // Depth-first search for DFS with almost sequential execution
         int computeLowerBound(const vector<bool> &nodes, int size);  // Compute lower bound
         int getEdgeCutWeight(const vector<bool> &nodes, int index, bool value);  // Get edge cut weight for a given vector of nodes
