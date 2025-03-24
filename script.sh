@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Setting the control parameters of the Slurm scheduler
-#SBATCH --job-name=checkpoint2
+#SBATCH --job-name=checkpoint3
 #SBATCH --nodes=1
 
 #SBATCH --output="%x-%J.out"
