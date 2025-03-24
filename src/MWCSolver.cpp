@@ -76,15 +76,15 @@ void MWCSolver::parallelDFS() {
 
 void MWCSolver::dfsAlmostSeq(state currentState) { 
     #pragma omp atomic // Start atomic region (ensures that the operation is executed atomically)
-    bestSolution.recursionCalls++; // Increment the number of recursion calls
-    #pragma omp critical // Start critical region (only one thread can execute this block at a time)
-    { 
-        if (currentState.depth == G.n) { // If all vertices are assigned
-            if (currentState.amountNodes == G.a && currentState.weight < bestSolution.weight) { // If the partition is valid and the cut weight is better than the best we have so far 
-                bestSolution.nodes = currentState.nodes; // Update the best partition
-                bestSolution.weight = currentState.weight; // Update the best cut weight
-            }
-            return;
+    bestSolution.recursionCalls++; // Increment the number of recursion calls 
+    if (currentState.depth == G.n) { // If all vertices are assigned
+        #pragma omp critical // Start critical region (only one thread can execute this block at a time)
+        {
+        if (currentState.amountNodes == G.a && currentState.weight < bestSolution.weight) { // If the partition is valid and the cut weight is better than the best we have so far 
+            bestSolution.nodes = currentState.nodes; // Update the best partition
+            bestSolution.weight = currentState.weight; // Update the best cut weight
+        }
+        return;
         }
     }
     
